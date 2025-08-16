@@ -1,26 +1,236 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light Theme (Default) */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+
+  /* Custom Theme Colors */
+  --amber-50: 48 96% 89%;
+  --amber-100: 48 96% 89%;
+  --amber-200: 45 93% 47%;
+  --amber-500: 43 74% 66%;
+  --amber-600: 25 95% 53%;
+  --amber-700: 25 95% 53%;
+  --orange-50: 33 100% 96%;
+  --orange-100: 33 100% 96%;
+  --orange-200: 33 100% 96%;
+  --orange-500: 25 95% 53%;
+  --orange-600: 25 95% 53%;
+  --orange-700: 25 95% 53%;
+  --green-50: 142 76% 36%;
+  --green-100: 142 76% 36%;
+  --green-200: 142 76% 36%;
+  --green-500: 142 76% 36%;
+  --green-600: 142 76% 36%;
+  --green-700: 142 76% 36%;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Typography */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"] {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
+
+  /* Dark Theme Custom Colors */
+  --amber-50: 48 96% 89%;
+  --amber-100: 48 96% 89%;
+  --amber-200: 45 93% 47%;
+  --amber-500: 43 74% 66%;
+  --amber-600: 25 95% 53%;
+  --amber-700: 25 95% 53%;
+  --orange-50: 33 100% 96%;
+  --orange-100: 33 100% 96%;
+  --orange-200: 33 100% 96%;
+  --orange-500: 25 95% 53%;
+  --orange-600: 25 95% 53%;
+  --orange-700: 25 95% 53%;
+  --green-50: 142 76% 36%;
+  --green-100: 142 76% 36%;
+  --green-200: 142 76% 36%;
+  --green-500: 142 76% 36%;
+  --green-600: 142 76% 36%;
+  --green-700: 142 76% 36%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="blue"] {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+
+  /* Blue Theme Custom Colors */
+  --amber-50: 221 83% 53%;
+  --amber-100: 221 83% 53%;
+  --amber-200: 221 83% 53%;
+  --amber-500: 221 83% 53%;
+  --amber-600: 221 83% 53%;
+  --amber-700: 221 83% 53%;
+  --orange-50: 221 83% 53%;
+  --orange-100: 221 83% 53%;
+  --orange-200: 221 83% 53%;
+  --orange-500: 221 83% 53%;
+  --orange-600: 221 83% 53%;
+  --orange-700: 221 83% 53%;
+  --green-50: 221 83% 53%;
+  --green-100: 221 83% 53%;
+  --green-200: 221 83% 53%;
+  --green-500: 221 83% 53%;
+  --green-600: 221 83% 53%;
+  --green-700: 221 83% 53%;
+}
+
+[data-theme="green"] {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 142 76% 36%;
+
+  /* Green Theme Custom Colors */
+  --amber-50: 142 76% 36%;
+  --amber-100: 142 76% 36%;
+  --amber-200: 142 76% 36%;
+  --amber-500: 142 76% 36%;
+  --amber-600: 142 76% 36%;
+  --amber-700: 142 76% 36%;
+  --orange-50: 142 76% 36%;
+  --orange-100: 142 76% 36%;
+  --orange-200: 142 76% 36%;
+  --orange-500: 142 76% 36%;
+  --orange-600: 142 76% 36%;
+  --orange-700: 142 76% 36%;
+  --green-50: 142 76% 36%;
+  --green-100: 142 76% 36%;
+  --green-200: 142 76% 36%;
+  --green-500: 142 76% 36%;
+  --green-600: 142 76% 36%;
+  --green-700: 142 76% 36%;
+}
+
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+}
+
+/* Theme utility classes */
+.theme-amber {
+  --primary: 43 74% 66%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --ring: 43 74% 66%;
+}
+
+.theme-blue {
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 221.2 83.2% 53.3%;
+}
+
+.theme-green {
+  --primary: 142 76% 36%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 142 76% 36%;
+}
+
+.theme-purple {
+  --primary: 262 83% 58%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 262 83% 58%;
+}
+
+.theme-red {
+  --primary: 0 84% 60%;
+  --primary-foreground: 210 40% 98%;
+  --ring: 0 84% 60%;
 }

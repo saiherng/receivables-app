@@ -1,0 +1,33 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "receivable_id": {
+      "type": "string",
+      "description": "ID of the related receivable"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of payment"
+    },
+    "payment_amount": {
+      "type": "number",
+      "description": "Amount paid in MMK"
+    },
+    "payment_type": {
+      "type": "string",
+      "description": "Type of payment method"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional payment notes"
+    }
+  },
+  "required": [
+    "receivable_id",
+    "payment_date",
+    "payment_amount",
+    "payment_type"
+  ]
+}
