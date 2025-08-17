@@ -56,7 +56,7 @@ export default function Payments() {
   const handleSubmit = async (paymentData: any) => {
     try {
       if (editingPayment) {
-        const response = await apiService.updatePayment(editingPayment.id, paymentData);
+        await apiService.updatePayment(editingPayment.id, paymentData);
         
         toast({
           title: "Payment updated",
@@ -66,7 +66,7 @@ export default function Payments() {
           isClosable: true,
         });
       } else {
-        const response = await apiService.createPayment(paymentData);
+        await apiService.createPayment(paymentData);
         
         toast({
           title: "Payment created",

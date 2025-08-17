@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -15,8 +15,10 @@ import {
   CardBody,
   CardHeader,
   InputGroup,
+  InputLeftElement,
   InputRightElement,
   IconButton,
+  Icon,
   Alert,
   AlertIcon,
   AlertTitle,
@@ -25,7 +27,7 @@ import {
 import { Eye, EyeOff, Lock, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -191,12 +193,15 @@ export default function ResetPasswordPage() {
               <FormControl isRequired>
                 <FormLabel>New Password</FormLabel>
                 <InputGroup>
+                  <InputLeftElement>
+                    <Icon as={Lock} size={16} color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter new password"
-                    leftIcon={<Lock size={16} />}
+                    pl={10}
                   />
                   <InputRightElement>
                     <IconButton
@@ -213,12 +218,15 @@ export default function ResetPasswordPage() {
               <FormControl isRequired>
                 <FormLabel>Confirm New Password</FormLabel>
                 <InputGroup>
+                  <InputLeftElement>
+                    <Icon as={Lock} size={16} color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    leftIcon={<Lock size={16} />}
+                    pl={10}
                   />
                   <InputRightElement>
                     <IconButton
@@ -258,5 +266,13 @@ export default function ResetPasswordPage() {
         </CardBody>
       </Card>
     </Box>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

@@ -15,7 +15,7 @@ import {
   GridItem,
 } from "@chakra-ui/react";
 import { Search, Filter, X } from "lucide-react";
-import { Receivable } from "@/entities/all";
+
 
 const PREDEFINED_CITIES = [
   "Yangon",

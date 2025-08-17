@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -10,16 +10,13 @@ import {
   Textarea,
   Select,
   Flex,
-  Box,
   VStack,
   HStack,
   Icon,
   Grid,
-  GridItem,
 } from "@chakra-ui/react";
 import { Save, Edit, Plus, X } from "lucide-react";
 import { format } from "date-fns";
-import { Receivable, Payment } from "@/entities/all";
 
 const PREDEFINED_PAYMENT_TYPES = [
   "Cash",

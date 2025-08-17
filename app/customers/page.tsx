@@ -35,25 +35,7 @@ export default function Customers() {
 
 
 
-  const handleAddReceivable = (customer: any) => {
-    toast({
-      title: "Add Receivable",
-      description: `Add receivable for ${customer.name}`,
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
-  };
 
-  const handleRecordPayment = (customer: any) => {
-    toast({
-      title: "Record Payment",
-      description: `Record payment for ${customer.name}`,
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
-  };
 
   return (
     <Box p={6}>

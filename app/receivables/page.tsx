@@ -61,7 +61,7 @@ export default function Receivables() {
     try {
       if (editingReceivable) {
         // Update existing receivable
-        const response = await apiService.updateReceivable(editingReceivable.id, receivableData);
+        await apiService.updateReceivable(editingReceivable.id, receivableData);
         
         toast({
           title: "Receivable updated",
@@ -72,7 +72,7 @@ export default function Receivables() {
         });
       } else {
         // Create new receivable
-        const response = await apiService.createReceivable(receivableData);
+        await apiService.createReceivable(receivableData);
         
         toast({
           title: "Receivable created",
@@ -100,7 +100,7 @@ export default function Receivables() {
 
   const handlePaymentSubmit = async (paymentData: any) => {
     try {
-      const response = await apiService.createPayment(paymentData);
+      await apiService.createPayment(paymentData);
       
       setShowPaymentForm(false);
       setPayingReceivable(null);

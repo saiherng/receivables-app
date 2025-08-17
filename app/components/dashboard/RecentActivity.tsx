@@ -10,7 +10,6 @@ import {
   Skeleton,
   Icon,
   VStack,
-  HStack,
 } from "@chakra-ui/react";
 import { Clock, Receipt, CreditCard } from "lucide-react";
 import { format } from "date-fns";

@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Box,
   Button,
   Text,
   Avatar,
@@ -13,10 +12,8 @@ import {
   MenuDivider,
   useToast,
   VStack,
-  HStack,
-  Icon,
 } from '@chakra-ui/react';
-import { ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserProfile() {
@@ -54,33 +51,7 @@ export default function UserProfile() {
     return null;
   }
 
-  const getUserInitials = (email: string) => {
-    if (!email) return 'U';
-    
-    // Try to extract initials from email username part
-    const username = email.split('@')[0];
-    
-    // Remove numbers and special characters, keep only letters
-    const cleanUsername = username.replace(/[0-9._-]/g, '');
-    
-    if (cleanUsername.length >= 2) {
-      // Take first two letters of the cleaned username
-      return cleanUsername.substring(0, 2).toUpperCase();
-    } else if (cleanUsername.length === 1) {
-      // Single letter
-      return cleanUsername.charAt(0).toUpperCase();
-    } else {
-      // No letters found, fallback to original logic
-      const parts = username.split(/[._-]/);
-      if (parts.length >= 2) {
-        return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-      } else if (username.length >= 2) {
-        return username.substring(0, 2).toUpperCase();
-      } else {
-        return username.charAt(0).toUpperCase();
-      }
-    }
-  };
+
 
   const getUserDisplayName = (email: string) => {
     if (!email) return 'User';

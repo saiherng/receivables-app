@@ -16,17 +16,13 @@ import {
   Flex,
   Box,
   VStack,
-  HStack,
   Icon,
   Skeleton,
 } from "@chakra-ui/react";
 import {
   Users,
-  Plus,
-  DollarSign,
   TrendingUp,
   TrendingDown,
-  MoreHorizontal,
   Eye,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";

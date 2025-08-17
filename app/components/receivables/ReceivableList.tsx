@@ -16,7 +16,6 @@ import {
   Flex,
   Box,
   VStack,
-  HStack,
   Icon,
   Skeleton,
 } from "@chakra-ui/react";

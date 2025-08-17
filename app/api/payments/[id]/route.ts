@@ -4,10 +4,10 @@ import { getSupabaseClient } from '@/lib/supabase-server';
 // GET /api/payments/[id] - Get payment by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
@@ -41,10 +41,10 @@ export async function GET(
 // PUT /api/payments/[id] - Update payment
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Validate required fields
@@ -97,10 +97,10 @@ export async function PUT(
 // DELETE /api/payments/[id] - Delete payment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const supabase = await getSupabaseClient();
     const { error } = await supabase

@@ -16,7 +16,6 @@ import {
   Flex,
   Box,
   VStack,
-  HStack,
   Icon,
   Skeleton,
 } from "@chakra-ui/react";
@@ -26,7 +25,6 @@ import {
   Trash2,
   Calendar,
   User,
-  Tag,
   FileText,
 } from "lucide-react";
 import { format } from "date-fns";
