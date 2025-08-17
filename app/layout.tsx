@@ -19,6 +19,9 @@ import {
   Icon,
 } from '@chakra-ui/react';
 import { ChakraUIProvider } from '@/providers/ChakraProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import UserProfile from '@/components/auth/UserProfile';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const navigationItems = [
   {
@@ -50,7 +53,28 @@ const navigationItems = [
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  
+  // Check if current path is an auth page (login, reset-password, callback)
+  const isAuthPage = pathname?.startsWith('/auth/');
 
+  // If it's an auth page, render without sidebar and ProtectedRoute
+  if (isAuthPage) {
+    return (
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Receivables App</title>
+          <meta name="description" content="Myanmar Business Receivables Tracker" />
+        </head>
+        <body>
+          {children}
+        </body>
+      </html>
+    );
+  }
+
+  // For all other pages, render with sidebar and ProtectedRoute
   return (
     <html lang="en">
       <head>
@@ -89,10 +113,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                   </Box>
                   <VStack align="start" spacing={0}>
                     <Text fontWeight="bold" fontSize="lg" color="gray.900">
-                      Receivables
+                      Receivables App
                     </Text>
                     <Text fontSize="xs" color="orange.600" fontWeight="medium">
-                      Myanmar Business Tracker
+                      Business Tracker
                     </Text>
                   </VStack>
                 </HStack>
@@ -157,12 +181,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                   <Text fontSize="xl" fontWeight="bold" color="gray.900">
                     Receivables Tracker
                   </Text>
+                  <UserProfile />
                 </Flex>
               </Box>
 
               {/* Page Content */}
               <Box flex="1" overflow="auto">
-                {children}
+                <ProtectedRoute>
+                  {children}
+                </ProtectedRoute>
               </Box>
             </Box>
           </Flex>
@@ -175,7 +202,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ChakraUIProvider>
-      <LayoutContent>{children}</LayoutContent>
+      <AuthProvider>
+        <LayoutContent>{children}</LayoutContent>
+      </AuthProvider>
     </ChakraUIProvider>
   );
 }

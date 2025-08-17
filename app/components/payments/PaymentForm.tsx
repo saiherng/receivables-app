@@ -48,17 +48,17 @@ export default function PaymentForm({
   paymentToEdit,
 }: PaymentFormProps) {
   const [formData, setFormData] = useState({
-    receivable_id: "",
+    receivable_id: receivableToPay ? receivableToPay.id : "",
     payment_date: format(new Date(), "yyyy-MM-dd"),
     payment_amount: "",
-    payment_type: "",
+    payment_type: "Banking",
     notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCustomPaymentTypeInput, setShowCustomPaymentTypeInput] =
     useState(false);
   const [customPaymentType, setCustomPaymentType] = useState("");
-  const [allAvailablePaymentTypes, setAllAvailablePaymentTypes] = useState<string[]>([]);
+  const [allAvailablePaymentTypes, setAllAvailablePaymentTypes] = useState<string[]>(PREDEFINED_PAYMENT_TYPES);
 
   const isEditing = !!paymentToEdit;
 
@@ -78,9 +78,9 @@ export default function PaymentForm({
         receivable_id: paymentToEdit.receivable_id || "",
         payment_date: paymentToEdit.payment_date
           ? format(new Date(paymentToEdit.payment_date), "yyyy-MM-dd")
-          : "",
+          : format(new Date(), "yyyy-MM-dd"),
         payment_amount: paymentToEdit.payment_amount || "",
-        payment_type: paymentToEdit.payment_type || "",
+        payment_type: paymentToEdit.payment_type || "Banking",
         notes: paymentToEdit.notes || "",
       });
     } else {
@@ -88,7 +88,7 @@ export default function PaymentForm({
         receivable_id: receivableToPay ? receivableToPay.id : "",
         payment_date: format(new Date(), "yyyy-MM-dd"),
         payment_amount: "",
-        payment_type: "",
+        payment_type: "Banking",
         notes: "",
       });
     }
@@ -101,7 +101,22 @@ export default function PaymentForm({
       ? customPaymentType.trim()
       : formData.payment_type;
 
-    if (!finalPaymentType) {
+
+
+    // Validate all required fields
+    if (!formData.receivable_id) {
+      newErrors.receivable_id = "Receivable is required.";
+    }
+
+    if (!formData.payment_date) {
+      newErrors.payment_date = "Payment date is required.";
+    }
+
+    if (!formData.payment_amount || parseFloat(formData.payment_amount) <= 0) {
+      newErrors.payment_amount = "Payment amount must be a positive number.";
+    }
+
+    if (!finalPaymentType || finalPaymentType.trim() === "") {
       newErrors.payment_type = "Payment type is required.";
     }
 
@@ -111,12 +126,15 @@ export default function PaymentForm({
     }
 
     setErrors({});
-    onSubmit({
+    
+    const paymentData = {
       ...formData,
       payment_type: finalPaymentType,
-      payment_amount: parseFloat(formData.payment_amount) || 0,
+      payment_amount: parseFloat(formData.payment_amount),
       ...(isEditing && { id: paymentToEdit.id }),
-    });
+    };
+    
+    onSubmit(paymentData);
   };
 
   const handleChange = (field: string, value: string) => {
@@ -217,7 +235,10 @@ export default function PaymentForm({
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleChange("receivable_id", e.target.value)}
                     required
                     isDisabled={isEditing || !!receivableToPay}
+                    borderColor={errors.receivable_id ? "red.500" : undefined}
+                    _focus={{ borderColor: errors.receivable_id ? "red.500" : undefined }}
                   >
+                    <option value="">Select a receivable...</option>
                     {isEditing && selectedReceivable ? (
                       <option value={selectedReceivable.id}>
                         {selectedReceivable.customer_name} -{" "}
@@ -246,6 +267,11 @@ export default function PaymentForm({
                       ))
                     )}
                   </Select>
+                  {errors.receivable_id && (
+                    <Text fontSize="sm" color="red.600" mt={1}>
+                      {errors.receivable_id}
+                    </Text>
+                  )}
                 </VStack>
                 <VStack spacing={2} align="stretch">
                   <Text fontSize="sm" fontWeight="medium">Payment Date</Text>
@@ -255,7 +281,14 @@ export default function PaymentForm({
                     value={formData.payment_date}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange("payment_date", e.target.value)}
                     required
+                    borderColor={errors.payment_date ? "red.500" : undefined}
+                    _focus={{ borderColor: errors.payment_date ? "red.500" : undefined }}
                   />
+                  {errors.payment_date && (
+                    <Text fontSize="sm" color="red.600" mt={1}>
+                      {errors.payment_date}
+                    </Text>
+                  )}
                 </VStack>
                 <VStack spacing={2} align="stretch">
                   <Text fontSize="sm" fontWeight="medium">Payment Amount (MMK)</Text>
@@ -270,7 +303,14 @@ export default function PaymentForm({
                     }
                     placeholder="0.00"
                     required
+                    borderColor={errors.payment_amount ? "red.500" : undefined}
+                    _focus={{ borderColor: errors.payment_amount ? "red.500" : undefined }}
                   />
+                  {errors.payment_amount && (
+                    <Text fontSize="sm" color="red.600" mt={1}>
+                      {errors.payment_amount}
+                    </Text>
+                  )}
                   {selectedReceivable && (
                     <VStack spacing={1} align="stretch" fontSize="sm" mt={2}>
                       <Text color="gray.600">

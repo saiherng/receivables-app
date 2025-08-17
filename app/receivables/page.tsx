@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Receivable, Payment } from "@/entities/all";
-import { Button, Box, Text, Flex, Container } from "@chakra-ui/react";
+import { Button, Box, Text, Flex, Container, useToast } from "@chakra-ui/react";
 import { Plus } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 
@@ -9,6 +8,8 @@ import ReceivableForm from "../components/receivables/ReceivableForm";
 import ReceivableList from "../components/receivables/ReceivableList";
 import FilterBar from "../components/receivables/FilterBar";
 import PaymentForm from "../components/payments/PaymentForm";
+import { Receivable, Payment } from "../lib/supabase";
+import { apiService } from "../lib/api";
 
 export default function Receivables() {
   const [receivables, setReceivables] = useState<Receivable[]>([]);
@@ -26,6 +27,8 @@ export default function Receivables() {
     status: "all",
   });
 
+  const toast = useToast();
+
   useEffect(() => {
     loadData();
   }, []);
@@ -33,14 +36,23 @@ export default function Receivables() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [receivablesData, paymentsData] = await Promise.all([
-        Receivable.getAll(),
-        Payment.getAll(),
+      // Load receivables and payments in parallel
+      const [receivablesResponse, paymentsResponse] = await Promise.all([
+        apiService.getReceivables(),
+        apiService.getPayments(),
       ]);
-      setReceivables(receivablesData);
-      setPayments(paymentsData);
-    } catch (error) {
+      
+      setReceivables(receivablesResponse.data || []);
+      setPayments(paymentsResponse.data || []);
+    } catch (error: any) {
       console.error("Error loading data:", error);
+      toast({
+        title: "Error loading data",
+        description: error.message || "Failed to load receivables and payments",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
     setIsLoading(false);
   };
@@ -48,26 +60,67 @@ export default function Receivables() {
   const handleSubmit = async (receivableData: any) => {
     try {
       if (editingReceivable) {
-        await Receivable.update(editingReceivable.id, receivableData);
+        // Update existing receivable
+        const response = await apiService.updateReceivable(editingReceivable.id, receivableData);
+        
+        toast({
+          title: "Receivable updated",
+          description: "Receivable has been updated successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       } else {
-        await Receivable.create(receivableData);
+        // Create new receivable
+        const response = await apiService.createReceivable(receivableData);
+        
+        toast({
+          title: "Receivable created",
+          description: "New receivable has been created successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       }
+      
       setShowForm(false);
       setEditingReceivable(null);
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving receivable:", error);
+      toast({
+        title: "Error saving receivable",
+        description: error.message || "Failed to save receivable",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
   const handlePaymentSubmit = async (paymentData: any) => {
     try {
-      await Payment.create(paymentData);
+      const response = await apiService.createPayment(paymentData);
+      
       setShowPaymentForm(false);
       setPayingReceivable(null);
       loadData();
-    } catch (error) {
+      toast({
+        title: "Payment recorded",
+        description: "Payment has been recorded successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
       console.error("Error saving payment:", error);
+      toast({
+        title: "Error recording payment",
+        description: error.message || "Failed to record payment",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -83,10 +136,25 @@ export default function Receivables() {
 
   const handleDelete = async (receivableId: string) => {
     try {
-      await Receivable.delete(receivableId);
+      await apiService.deleteReceivable(receivableId);
+      
       loadData();
-    } catch (error) {
+      toast({
+        title: "Receivable deleted",
+        description: "Receivable has been deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
       console.error("Error deleting receivable:", error);
+      toast({
+        title: "Error deleting receivable",
+        description: error.message || "Failed to delete receivable",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 

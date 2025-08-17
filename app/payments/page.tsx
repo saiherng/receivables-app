@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Receivable, Payment } from "@/entities/all";
-import { Button, Box, Text, Flex, Container } from "@chakra-ui/react";
+import { Button, Box, Text, Flex, Container, useToast } from "@chakra-ui/react";
 import { Plus } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 
 import PaymentForm from "../components/payments/PaymentForm";
 import PaymentList from "../components/payments/PaymentList";
 import PaymentFilters from "../components/payments/PaymentFilters";
+import { Payment, Receivable } from "../lib/supabase";
+import { apiService } from "../lib/api";
 
 export default function Payments() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -16,11 +17,14 @@ export default function Payments() {
   const [showForm, setShowForm] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [filters, setFilters] = useState({
+    receivable: "all",
     customer: "",
     paymentType: "all",
     dateFrom: "",
     dateTo: "",
   });
+
+  const toast = useToast();
 
   useEffect(() => {
     loadData();
@@ -29,14 +33,22 @@ export default function Payments() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [paymentsData, receivablesData] = await Promise.all([
-        Payment.getAll(),
-        Receivable.getAll(),
+      const [paymentsResponse, receivablesResponse] = await Promise.all([
+        apiService.getPayments(),
+        apiService.getReceivables(),
       ]);
-      setPayments(paymentsData);
-      setReceivables(receivablesData);
-    } catch (error) {
-      console.error("Error loading data:", error);
+      
+      setPayments(paymentsResponse.data || []);
+      setReceivables(receivablesResponse.data || []);
+    } catch (error: any) {
+      console.error("Error loading payments data:", error);
+      toast({
+        title: "Error loading data",
+        description: error.message || "Failed to load payments and receivables",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
     setIsLoading(false);
   };
@@ -44,24 +56,39 @@ export default function Payments() {
   const handleSubmit = async (paymentData: any) => {
     try {
       if (editingPayment) {
-        const updatedPayment = await Payment.update(
-          editingPayment.id,
-          paymentData
-        );
-        setPayments((prevPayments) =>
-          prevPayments.map((p) =>
-            p.id === editingPayment.id ? updatedPayment : p
-          )
-        );
+        const response = await apiService.updatePayment(editingPayment.id, paymentData);
+        
+        toast({
+          title: "Payment updated",
+          description: "Payment has been updated successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       } else {
-        const newPayment = await Payment.create(paymentData);
-        // Add new payment to the beginning of the list
-        setPayments((prevPayments) => [newPayment, ...prevPayments]);
+        const response = await apiService.createPayment(paymentData);
+        
+        toast({
+          title: "Payment created",
+          description: "New payment has been created successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       }
+      
       setShowForm(false);
       setEditingPayment(null);
-    } catch (error) {
+      loadData();
+    } catch (error: any) {
       console.error("Error saving payment:", error);
+      toast({
+        title: "Error saving payment",
+        description: error.message || "Failed to save payment",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -72,50 +99,71 @@ export default function Payments() {
 
   const handleDelete = async (paymentId: string) => {
     try {
-      await Payment.delete(paymentId);
-      setPayments((prevPayments) =>
-        prevPayments.filter((p) => p.id !== paymentId)
-      );
-    } catch (error) {
+      await apiService.deletePayment(paymentId);
+      
+      loadData();
+      toast({
+        title: "Payment deleted",
+        description: "Payment has been deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
       console.error("Error deleting payment:", error);
+      toast({
+        title: "Error deleting payment",
+        description: error.message || "Failed to delete payment",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
-  const getReceivableById = (id: string) => {
-    return receivables.find((r) => r.id === id);
+  const getReceivableById = (receivableId: string) => {
+    return receivables.find((r) => r.id === receivableId);
   };
+
+  // Get unique payment types from existing payments and predefined types
+  const PREDEFINED_PAYMENT_TYPES = [
+    "Cash",
+    "KPay", 
+    "Banking",
+    "Wave Money",
+    "CB Pay",
+    "Other",
+  ];
+  
+  const existingPaymentTypes = [...new Set(payments.map(p => p.payment_type).filter(Boolean))];
+  const availablePaymentTypes = [...new Set([...PREDEFINED_PAYMENT_TYPES, ...existingPaymentTypes])].sort();
 
   const filteredPayments = payments.filter((payment) => {
     const receivable = getReceivableById(payment.receivable_id);
-    const customerName = receivable?.customer_name || "";
-
+    const receivableMatch =
+      filters.receivable === "all" || payment.receivable_id === filters.receivable;
     const customerMatch =
-      !filters.customer ||
-      customerName.toLowerCase().includes(filters.customer.toLowerCase());
+      !filters.customer || (receivable && receivable.customer_name?.toLowerCase().includes(filters.customer.toLowerCase()));
     const paymentTypeMatch =
-      filters.paymentType === "all" ||
-      payment.payment_type === filters.paymentType;
+      filters.paymentType === "all" || payment.payment_type === filters.paymentType;
     const dateFromMatch =
       !filters.dateFrom || payment.payment_date >= filters.dateFrom;
-    const dateToMatch =
-      !filters.dateTo || payment.payment_date <= filters.dateTo;
+    const dateToMatch = !filters.dateTo || payment.payment_date <= filters.dateTo;
 
-    return customerMatch && paymentTypeMatch && dateFromMatch && dateToMatch;
+    return (
+      receivableMatch && customerMatch && paymentTypeMatch && dateFromMatch && dateToMatch
+    );
   });
 
   const handleClearFilters = () => {
     setFilters({
+      receivable: "all",
       customer: "",
       paymentType: "all",
       dateFrom: "",
       dateTo: "",
     });
   };
-
-  // Get ALL unique payment types from payments (not filtered)
-  const allPaymentTypes = [
-    ...new Set(payments.map((p) => p.payment_type).filter(Boolean)),
-  ].sort();
 
   return (
     <Box p={6}>
@@ -130,31 +178,28 @@ export default function Payments() {
           <Box>
             <Text fontSize="3xl" fontWeight="bold" color="gray.900">Payments</Text>
             <Text color="gray.600" mt={1}>
-              Track and record customer payments
+              Track and manage payment records
             </Text>
           </Box>
           <Button
-            onClick={() => {
-              setEditingPayment(null);
-              setShowForm(!showForm);
-            }}
+            onClick={() => setShowForm(!showForm)}
             bgGradient="linear(to-r, green.500, green.600)" 
             _hover={{ bgGradient: "linear(to-r, green.600, green.700)" }} 
             color="white" 
             boxShadow="lg"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Record Payment
+            New Payment
           </Button>
         </Flex>
 
         <AnimatePresence>
           {showForm && (
             <PaymentForm
+              receivableToPay={null}
               receivables={receivables}
               existingPayments={payments}
               paymentToEdit={editingPayment}
-              receivableToPay={null}
               onSubmit={handleSubmit}
               onCancel={() => {
                 setShowForm(false);
@@ -168,16 +213,17 @@ export default function Payments() {
           filters={filters}
           onFiltersChange={setFilters}
           onClearFilters={handleClearFilters}
-          paymentTypes={allPaymentTypes}
           receivables={receivables}
+          paymentTypes={availablePaymentTypes}
+          customers={[...new Set(receivables.map(r => r.customer_name).filter(Boolean))]}
         />
 
         <PaymentList
           payments={filteredPayments}
           getReceivableById={getReceivableById}
-          isLoading={isLoading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          isLoading={isLoading}
         />
       </Container>
     </Box>

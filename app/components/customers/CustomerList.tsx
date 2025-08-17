@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardBody,
@@ -27,24 +27,34 @@ import {
   TrendingUp,
   TrendingDown,
   MoreHorizontal,
+  Eye,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import CustomerDetail from "./CustomerDetail";
 
 interface CustomerListProps {
   customers: any[];
   isLoading: boolean;
-  onRowClick: (customer: any) => void;
-  onAddReceivable: (customer: any) => void;
-  onRecordPayment: (customer: any) => void;
+  onRefresh?: () => void;
 }
 
 export default function CustomerList({
   customers,
   isLoading,
-  onRowClick,
-  onAddReceivable,
-  onRecordPayment,
+  onRefresh,
 }: CustomerListProps) {
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showDetail, setShowDetail] = useState(false);
+
+  // Update selectedCustomer when customers array changes
+  useEffect(() => {
+    if (selectedCustomer && customers.length > 0) {
+      const updatedCustomer = customers.find(c => c.name === selectedCustomer.name);
+      if (updatedCustomer) {
+        setSelectedCustomer(updatedCustomer);
+      }
+    }
+  }, [customers, selectedCustomer]);
   if (isLoading) {
     return (
       <Card bg="white" border="1px solid" borderColor="orange.200" borderRadius="lg">
@@ -86,7 +96,8 @@ export default function CustomerList({
   };
 
   return (
-    <Card bg="white" border="1px solid" borderColor="orange.200" borderRadius="lg">
+    <>
+      <Card bg="white" border="1px solid" borderColor="orange.200" borderRadius="lg">
       <CardHeader>
         <Flex align="center" gap={2}>
           <Icon as={Users} w="20px" h="20px" />
@@ -106,7 +117,7 @@ export default function CustomerList({
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <Card border="1px solid" borderColor="orange.200" borderRadius="lg" overflow="hidden">
-                    <CardHeader pb={3} p={4} onClick={() => onRowClick(customer)}>
+                    <CardHeader pb={3} p={4} >
                       <Flex justify="space-between" align="start" gap={3}>
                         <Box minW={0} flex={1}>
                           <Text fontSize="lg" fontWeight="bold" color="gray.900" noOfLines={1}>
@@ -137,7 +148,7 @@ export default function CustomerList({
                         )}
                       </Flex>
                     </CardHeader>
-                    <CardBody fontSize="sm" p={4} pt={0} onClick={() => onRowClick(customer)}>
+                    <CardBody fontSize="sm" p={4} pt={0}>
                       <VStack spacing={2} align="stretch">
                         <Flex justify="space-between" align="center" gap={4}>
                           <Flex align="center" gap={1.5} color="gray.600" fontSize="xs" flexShrink={0}>
@@ -176,40 +187,16 @@ export default function CustomerList({
                     <CardFooter bg="gray.50" p={4} pt={3}>
                       <Flex justify="end" gap={2}>
                         <Button
-                          variant="outline"
                           size="sm"
-                          onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            onRowClick(customer);
-                          }}
-                          fontSize="xs"
-                        >
-                          <Icon as={MoreHorizontal} w="12px" h="12px" mr={1} />
-                          Details
-                        </Button>
-                        <Button
                           variant="outline"
-                          size="sm"
-                          onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            onRecordPayment(customer);
+                          colorScheme="orange"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setShowDetail(true);
                           }}
-                          fontSize="xs"
                         >
-                          <Icon as={DollarSign} w="12px" h="12px" mr={1} />
-                          Pay
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            onAddReceivable(customer);
-                          }}
-                          fontSize="xs"
-                        >
-                          <Icon as={Plus} w="12px" h="12px" mr={1} />
-                          New
+                          <Icon as={Eye} w="16px" h="16px" mr={2} />
+                          View Details
                         </Button>
                       </Flex>
                     </CardFooter>
@@ -243,15 +230,13 @@ export default function CustomerList({
                 >
                   <Td
                     fontWeight="medium"
-                    cursor="pointer"
                     _hover={{ color: "orange.600" }}
-                    onClick={() => onRowClick(customer)}
                   >
                     {customer.name}
                   </Td>
                   <Td
-                    onClick={() => onRowClick(customer)}
-                    cursor="pointer"
+                    
+  
                   >
                     <Flex flexWrap="wrap" gap={1} maxW="xs">
                       {customer.cities.map((city: string) => (
@@ -266,61 +251,44 @@ export default function CustomerList({
                     </Flex>
                   </Td>
                   <Td
-                    onClick={() => onRowClick(customer)}
+                    
                     fontWeight="semibold"
-                    cursor="pointer"
+                    
                   >
                     {customer.totalReceivables.toLocaleString()} MMK
                   </Td>
                   <Td
-                    onClick={() => onRowClick(customer)}
+                    
                     fontWeight="semibold"
                     color="green.600"
-                    cursor="pointer"
+                    
                   >
                     {customer.totalPaid.toLocaleString()} MMK
                   </Td>
                   <Td
-                    onClick={() => onRowClick(customer)}
+                    
                     fontWeight="semibold"
-                    cursor="pointer"
+                   
                     color={customer.outstandingBalance > 0 ? "orange.600" : "green.600"}
                   >
                     {customer.outstandingBalance.toLocaleString()} MMK
                   </Td>
-                  <Td
-                    onClick={() => onRowClick(customer)}
-                    cursor="pointer"
-                  >
+                  <Td>
                     <StatusBadge customer={customer} />
                   </Td>
                   <Td textAlign="right">
                     <Flex justify="end" gap={1}>
                       <Button
-                        variant="ghost"
                         size="sm"
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          onRecordPayment(customer);
+                        variant="outline"
+                        colorScheme="orange"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowDetail(true);
                         }}
-                        color="green.600"
-                        _hover={{ bg: "green.100" }}
-                        title="Record Payment"
                       >
-                        <Icon as={DollarSign} w="16px" h="16px" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          onAddReceivable(customer);
-                        }}
-                        color="orange.600"
-                        _hover={{ bg: "orange.100" }}
-                        title="Add Receivable"
-                      >
-                        <Icon as={Plus} w="16px" h="16px" />
+                        <Icon as={Eye} w="16px" h="16px" mr={2} />
+                        Details
                       </Button>
                     </Flex>
                   </Td>
@@ -331,5 +299,48 @@ export default function CustomerList({
         </Box>
       </CardBody>
     </Card>
+
+    {/* Customer Detail Modal */}
+    <AnimatePresence>
+      {showDetail && selectedCustomer && (
+                 <CustomerDetail
+           customer={selectedCustomer}
+           onClose={() => {
+             setShowDetail(false);
+             setSelectedCustomer(null);
+           }}
+                       onEditPayment={(payment) => {
+              // Handle edit payment - could navigate to payments page
+            }}
+           onDeletePayment={async (paymentId) => {
+             // Handle delete payment
+             try {
+               const response = await fetch(`/api/payments/${paymentId}`, {
+                 method: 'DELETE',
+               });
+               
+               if (!response.ok) {
+                 const errorData = await response.json();
+                 throw new Error(errorData.error || 'Failed to delete payment');
+               }
+               
+               // Refresh the customer data when a payment is deleted
+               if (onRefresh) {
+                 onRefresh();
+               }
+             } catch (error: any) {
+               console.error('Error deleting payment:', error);
+             }
+           }}
+           onPaymentAdded={() => {
+             // Refresh the customer data when a payment is added
+             if (onRefresh) {
+               onRefresh();
+             }
+           }}
+         />
+      )}
+    </AnimatePresence>
+    </>
   );
 }

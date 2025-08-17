@@ -12,7 +12,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { MapPin } from "lucide-react";
-import { Receivable, Payment } from "@/entities/all";
+import { Receivable, Payment } from "../../lib/supabase";
 
 interface CityBreakdownProps {
   receivables: Receivable[];

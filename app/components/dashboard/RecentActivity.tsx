@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { Clock, Receipt, CreditCard } from "lucide-react";
 import { format } from "date-fns";
-import { Receivable, Payment } from "@/entities/all";
+import { Receivable, Payment } from "../../lib/supabase";
 
 interface RecentActivityProps {
   receivables: Receivable[];

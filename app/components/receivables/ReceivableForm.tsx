@@ -128,11 +128,36 @@ export default function ReceivableForm({
     e.preventDefault();
     const finalCity = showCustomCityInput ? customCity.trim() : formData.city;
 
-    onSubmit({
+    // Validate required fields
+    if (!formData.date) {
+      alert('Please select a date');
+      return;
+    }
+    
+    if (!formData.customer_name || formData.customer_name.trim() === '') {
+      alert('Please enter a customer name');
+      return;
+    }
+    
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    
+    if (!finalCity || finalCity.trim() === '') {
+      alert('Please select or enter a city');
+      return;
+    }
+
+    const submitData = {
       ...formData,
       city: finalCity,
       amount: parseFloat(formData.amount) || 0,
-    });
+    };
+
+
+
+    onSubmit(submitData);
   };
 
   const handleChange = (field: string, value: string) => {

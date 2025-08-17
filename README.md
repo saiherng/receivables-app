@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Receivables App
 
-## Getting Started
+A Next.js application for managing customer receivables and payments with Supabase backend.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Customer management with receivables tracking
+- Payment recording and history
+- Real-time data updates
+- Responsive design with Chakra UI
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Quick Start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Set up environment variables**
+   ```bash
+   cp env.example .env.local
+   ```
+   
+   Fill in your Supabase credentials in `.env.local`:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+   ```
 
-## Learn More
+3. **Set up the database**
+   - Go to your Supabase Dashboard → SQL Editor
+   - Run the `supabase-schema-with-auth.sql` script
 
-To learn more about Next.js, take a look at the following resources:
+4. **Disable RLS for development**
+   - Go to your Supabase Dashboard → SQL Editor
+   - Run the `fix-rls-policies.sql` script
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+6. **Open your browser** and navigate to `http://localhost:3000`
 
-## Deploy on Vercel
+## API Endpoints
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Receivables
+- `GET /api/receivables` - Get all receivables
+- `POST /api/receivables` - Create a new receivable
+- `GET /api/receivables/[id]` - Get a specific receivable
+- `PUT /api/receivables/[id]` - Update a receivable
+- `DELETE /api/receivables/[id]` - Delete a receivable
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Payments
+- `GET /api/payments` - Get all payments
+- `POST /api/payments` - Create a new payment
+- `GET /api/payments/[id]` - Get a specific payment
+- `PUT /api/payments/[id]` - Update a payment
+- `DELETE /api/payments/[id]` - Delete a payment
+
+## Database Schema
+
+### Receivables Table
+- `id` (uuid, primary key)
+- `date` (date)
+- `customer_name` (text)
+- `amount` (numeric)
+- `city` (text)
+- `description` (text, nullable)
+- `created_at` (timestamp)
+
+### Payments Table
+- `id` (uuid, primary key)
+- `receivable_id` (uuid, foreign key)
+- `payment_date` (date)
+- `payment_amount` (numeric)
+- `payment_type` (text)
+- `notes` (text, nullable)
+- `created_at` (timestamp)
+
+## Technologies Used
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **UI**: Chakra UI
+- **Backend**: Supabase (PostgreSQL, Auth)
