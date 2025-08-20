@@ -1,9 +1,19 @@
-import { supabase } from './supabase';
 import { formatDateForDatabase } from './date-utils';
 import { validateReceivableData, validatePaymentData, checkRateLimit } from './validation';
 
+// Helper function to get Supabase client
+async function getSupabaseClient() {
+  try {
+    const { supabase } = await import('./supabase');
+    return supabase;
+  } catch (error) {
+    throw new Error('Supabase client not available. Please check your environment variables.');
+  }
+}
+
 // Helper function to get the current user
 async function getCurrentUser() {
+  const supabase = await getSupabaseClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
     throw new Error('Authentication required. Please sign in again.');
@@ -13,6 +23,7 @@ async function getCurrentUser() {
 
 // Helper function to refresh token if needed
 async function refreshTokenIfNeeded() {
+  const supabase = await getSupabaseClient();
   const { data: { session }, error } = await supabase.auth.getSession();
   
   if (error || !session) {
@@ -44,6 +55,7 @@ export const receivablesApi = {
       throw new Error('Rate limit exceeded. Please try again later.');
     }
     
+    const supabase = await getSupabaseClient();
     let query = supabase
       .from('receivables')
       .select('*')
@@ -81,6 +93,7 @@ export const receivablesApi = {
   getById: async (id: string) => {
     await refreshTokenIfNeeded();
     
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from('receivables')
       .select('*')
@@ -110,6 +123,7 @@ export const receivablesApi = {
       date: formatDateForDatabase(validatedData.date)
     };
     
+    const supabase = await getSupabaseClient();
     const { data: newReceivable, error } = await supabase
       .from('receivables')
       .insert([formattedData])
@@ -136,6 +150,7 @@ export const receivablesApi = {
       date: validatedData.date ? formatDateForDatabase(validatedData.date) : validatedData.date
     };
     
+    const supabase = await getSupabaseClient();
     const { data: updatedReceivable, error } = await supabase
       .from('receivables')
       .update(formattedData)
@@ -154,6 +169,7 @@ export const receivablesApi = {
   delete: async (id: string) => {
     await refreshTokenIfNeeded();
     
+    const supabase = await getSupabaseClient();
     const { error } = await supabase
       .from('receivables')
       .delete()
@@ -173,6 +189,7 @@ export const paymentsApi = {
   getAll: async () => {
     await refreshTokenIfNeeded();
     
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from('payments')
       .select('*')
@@ -203,6 +220,7 @@ export const paymentsApi = {
   getById: async (id: string) => {
     await refreshTokenIfNeeded();
     
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from('payments')
       .select('*')
@@ -232,6 +250,7 @@ export const paymentsApi = {
       payment_date: formatDateForDatabase(validatedData.payment_date)
     };
 
+    const supabase = await getSupabaseClient();
     const { data: newPayment, error } = await supabase
       .from('payments')
       .insert([formattedData])
@@ -258,6 +277,7 @@ export const paymentsApi = {
       payment_date: validatedData.payment_date ? formatDateForDatabase(validatedData.payment_date) : validatedData.payment_date
     };
     
+    const supabase = await getSupabaseClient();
     const { data: updatedPayment, error } = await supabase
       .from('payments')
       .update(formattedData)
@@ -276,6 +296,7 @@ export const paymentsApi = {
   delete: async (id: string) => {
     await refreshTokenIfNeeded();
     
+    const supabase = await getSupabaseClient();
     const { error } = await supabase
       .from('payments')
       .delete()

@@ -1,7 +1,6 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -19,9 +18,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    // Only initialize Supabase if we're on the client side and have environment variables
+    if (typeof window === 'undefined') {
+      // Server-side: skip initialization
+      setLoading(false);
+      return;
+    }
+
+    // Check if Supabase environment variables are available
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('Supabase environment variables not found. Authentication will be disabled.');
+      setLoading(false);
+      return;
+    }
+
+    // Dynamically import Supabase to avoid build-time issues
+    const initializeAuth = async () => {
       try {
+        const { supabase } = await import('@/lib/supabase');
+        
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -32,39 +48,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session?.user ?? null);
         }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('AuthProvider: Auth state change:', event, session ? 'session present' : 'no session');
+            
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              setSession(session);
+              setUser(session?.user ?? null);
+            } else if (event === 'SIGNED_OUT') {
+              setSession(null);
+              setUser(null);
+            }
+            
+            setLoading(false);
+          }
+        );
+
+        return () => subscription.unsubscribe();
       } catch (error) {
-        console.error('AuthProvider: Exception getting session:', error);
-        setSession(null);
-        setUser(null);
-      } finally {
+        console.error('AuthProvider: Failed to initialize Supabase:', error);
         setLoading(false);
       }
     };
 
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('AuthProvider: Auth state change:', event, session ? 'session present' : 'no session');
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setSession(session);
-          setUser(session?.user ?? null);
-        } else if (event === 'SIGNED_OUT') {
-          setSession(null);
-          setUser(null);
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    initializeAuth();
   }, []);
 
   const signOut = async () => {
     try {
+      const { supabase } = await import('@/lib/supabase');
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
@@ -78,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      const { supabase } = await import('@/lib/supabase');
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         console.error('Refresh user error:', error);
