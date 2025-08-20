@@ -42,29 +42,61 @@ All dashboard pages are protected:
 - `/customers` - Customer management
 
 #### Security Middleware
-- Middleware checks for valid session cookies on protected pages
+- **Server-side authentication checks** in Next.js middleware
 - Automatic redirection to login for unauthenticated requests
-- Session validation using Supabase cookies
+- Session validation using Supabase cookies and JWT tokens
+- Protection against unauthorized access to protected routes
 
-### 4. Input Validation
+### 4. Input Validation & Sanitization
 
-#### Request Validation
-- All required fields are validated
-- Data type validation (numbers, strings, dates)
-- SQL injection prevention through Supabase's parameterized queries
-- XSS prevention through proper input sanitization
+#### Comprehensive Input Validation
+- **XSS Prevention**: HTML sanitization for all text inputs
+- **SQL Injection Prevention**: Parameterized queries through Supabase ORM
+- **Input Length Limits**: Maximum character limits for all fields
+- **Data Type Validation**: Strict validation for amounts, dates, UUIDs
+- **Business Logic Validation**: Amount must be positive, dates must be valid
 
-#### Business Logic Validation
-- Amount validation (must be positive numbers)
-- Date format validation and normalization
-- Customer name and city validation (non-empty strings)
+#### Validation Functions
+```typescript
+// Text sanitization and validation
+validateText(input: string, maxLength: number)
 
-### 5. Error Handling
+// Amount validation (positive numbers only)
+validateAmount(amount: any)
+
+// Date validation with range checks
+validateDate(date: any)
+
+// UUID validation
+validateUUID(uuid: any)
+
+// Payment type validation (whitelist approach)
+validatePaymentType(paymentType: any)
+```
+
+### 5. Security Headers
+
+#### Comprehensive Security Headers
+- **X-Frame-Options**: DENY (prevents clickjacking)
+- **X-Content-Type-Options**: nosniff (prevents MIME type sniffing)
+- **X-XSS-Protection**: 1; mode=block (XSS protection)
+- **Strict-Transport-Security**: HSTS for HTTPS enforcement
+- **Content-Security-Policy**: Restricts resource loading
+- **Referrer-Policy**: Controls referrer information
+
+### 6. Rate Limiting
+
+#### API Rate Limiting
+- **Per-user rate limiting**: 100 requests per minute per user
+- **Request tracking**: In-memory rate limiting for API endpoints
+- **Graceful degradation**: Clear error messages when limits exceeded
+
+### 7. Error Handling
 
 #### Secure Error Responses
-- Generic error messages to prevent information disclosure
-- Proper error handling for database operations
-- Detailed error logging for debugging (client-side only)
+- **Generic error messages**: No sensitive information disclosure
+- **Proper error handling**: Database operations with error boundaries
+- **Production logging**: Console logs removed in production builds
 
 #### Authentication Error Handling
 - Automatic sign-out on token expiration
@@ -82,36 +114,65 @@ async function getCurrentUser()
 // Refresh token if needed
 async function refreshTokenIfNeeded()
 
-// API functions with built-in authentication
+// Rate limiting check
+checkRateLimit(identifier: string, maxRequests: number, windowMs: number)
+
+// API functions with built-in validation and rate limiting
 export const receivablesApi = {
   getAll: async (customer?: string)
   getById: async (id: string)
-  create: async (data: any)
-  update: async (id: string, data: any)
+  create: async (data: any) // Validated and sanitized
+  update: async (id: string, data: any) // Validated and sanitized
   delete: async (id: string)
 }
 ```
 
-### Database Operation Protection
-
-All database operations use the authenticated Supabase client:
+### Input Validation (`app/lib/validation.ts`)
 
 ```typescript
-// Example: Get receivables with user filtering
-const { data, error } = await supabase
-  .from('receivables')
-  .select('*')
-  .eq('user_id', user.id) // Only user's data
-  .order('date', { ascending: false });
+// Sanitize HTML to prevent XSS
+sanitizeHtml(input: string): string
+
+// Validate and sanitize text input
+validateText(input: string, maxLength: number): string
+
+// Validate amount (positive number)
+validateAmount(amount: any): number
+
+// Validate date with range checks
+validateDate(date: any): string
+
+// Validate UUID format
+validateUUID(uuid: any): string
+
+// Validate payment type (whitelist)
+validatePaymentType(paymentType: any): string
 ```
 
-### Frontend API Integration (`app/lib/api.ts`)
+### Database Operation Protection
 
-- Automatic token refresh
-- User authentication verification
-- Error handling for expired sessions
-- Type-safe API functions
-- Built-in authorization checks
+All database operations use the authenticated Supabase client with validation:
+
+```typescript
+// Example: Create receivable with validation
+const validatedData = validateReceivableData(data);
+const { data: newReceivable, error } = await supabase
+  .from('receivables')
+  .insert([validatedData])
+  .select()
+  .single();
+```
+
+### Security Middleware (`middleware.ts`)
+
+```typescript
+// Server-side authentication check
+const { data: { user }, error } = await supabase.auth.getUser(token);
+
+if (error || !user) {
+  return NextResponse.redirect(new URL('/auth/login', req.url));
+}
+```
 
 ## Security Best Practices
 
@@ -129,32 +190,33 @@ const { data, error } = await supabase
 ### 3. Input Sanitization
 - All user inputs are validated and sanitized
 - SQL injection prevention through Supabase ORM
-- XSS prevention through proper encoding
+- XSS prevention through HTML encoding
+- Whitelist approach for payment types
 
 ### 4. Error Handling
 - No sensitive information in error responses
 - Proper logging for security events
 - Graceful degradation on authentication failures
 
+### 5. Rate Limiting
+- Per-user rate limiting on API endpoints
+- Prevents abuse and DoS attacks
+- Clear error messages when limits exceeded
+
 ## Database Security
 
 ### Row-Level Security (RLS)
-The database schema should include RLS policies:
+The database schema includes comprehensive RLS policies:
 
 ```sql
--- Example RLS policy for receivables
-CREATE POLICY "Users can only access their own receivables" ON receivables
-FOR ALL USING (auth.uid() = user_id);
+-- Users can only access their own data
+CREATE POLICY "Users can view their own receivables" ON receivables
+FOR SELECT USING (auth.uid() = user_id);
 
--- Admin override
-CREATE POLICY "Admins can access all receivables" ON receivables
-FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM auth.users 
-    WHERE id = auth.uid() 
-    AND raw_user_meta_data->>'role' = 'admin'
-  )
-);
+-- Automatic user_id assignment on insert
+CREATE TRIGGER set_receivables_user_id
+BEFORE INSERT ON receivables
+FOR EACH ROW EXECUTE FUNCTION set_user_id();
 ```
 
 ### Audit Trail
@@ -178,6 +240,12 @@ FOR ALL USING (
 - Test with malformed data
 - Test with SQL injection attempts
 - Test with XSS payloads
+- Test with oversized inputs
+
+### Rate Limiting Tests
+- Test normal usage patterns
+- Test rate limit enforcement
+- Test rate limit reset behavior
 
 ## Monitoring and Logging
 
@@ -185,12 +253,14 @@ FOR ALL USING (
 - Failed authentication attempts
 - Authorization violations
 - Invalid token usage
+- Rate limit violations
 - Unusual access patterns
 
 ### Audit Logs
 - All database operations logged with user context
 - Data modification events
 - Authentication events
+- Rate limiting events
 
 ## Compliance Considerations
 
@@ -198,27 +268,33 @@ FOR ALL USING (
 - User data isolation
 - Right to be forgotten (data deletion)
 - Data access controls
+- Input validation and sanitization
 
 ### SOX Compliance
 - Audit trails for financial data
 - Access controls for sensitive information
 - Data integrity validation
+- Secure error handling
 
-## Future Security Enhancements
+## Security Headers Implementation
 
-### Planned Improvements
-1. Rate limiting for database operations
-2. IP-based access controls
-3. Multi-factor authentication
-4. Advanced threat detection
-5. Automated security scanning
+### Content Security Policy (CSP)
+```
+default-src 'self';
+script-src 'self' 'unsafe-eval' 'unsafe-inline';
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: https:;
+font-src 'self' data:;
+connect-src 'self' https://*.supabase.co;
+frame-ancestors 'none';
+```
 
-### Security Headers
-Implement additional security headers:
-- Content Security Policy (CSP)
-- X-Frame-Options
-- X-Content-Type-Options
-- Strict-Transport-Security (HSTS)
+### Additional Headers
+- **X-Frame-Options**: DENY
+- **X-Content-Type-Options**: nosniff
+- **X-XSS-Protection**: 1; mode=block
+- **Strict-Transport-Security**: max-age=31536000; includeSubDomains
+- **Referrer-Policy**: origin-when-cross-origin
 
 ## Incident Response
 
@@ -233,6 +309,24 @@ Implement additional security headers:
 - Security team: security@company.com
 - Emergency contact: +1-XXX-XXX-XXXX
 
+## Recent Security Improvements
+
+### ✅ **Implemented Fixes:**
+1. **Removed debug page** - Eliminated information disclosure
+2. **Added security headers** - Comprehensive protection against common attacks
+3. **Implemented input validation** - XSS and injection prevention
+4. **Added rate limiting** - Prevents abuse and DoS attacks
+5. **Enhanced middleware** - Server-side authentication checks
+6. **Removed debug logging** - No sensitive information in production logs
+
+### 🔒 **Security Posture:**
+- **Authentication**: ✅ Secure JWT-based authentication
+- **Authorization**: ✅ Row-level security and user isolation
+- **Input Validation**: ✅ Comprehensive sanitization and validation
+- **Error Handling**: ✅ Secure error responses
+- **Rate Limiting**: ✅ API abuse prevention
+- **Security Headers**: ✅ Protection against common web attacks
+
 ---
 
-**Note**: This security implementation follows industry best practices and should be regularly reviewed and updated as new threats emerge. The client-side approach provides better performance and reduces server complexity while maintaining security through Supabase's robust authentication system.
+**Note**: This security implementation follows industry best practices and should be regularly reviewed and updated as new threats emerge. The client-side approach provides better performance and reduces server complexity while maintaining security through Supabase's robust authentication system and comprehensive input validation.

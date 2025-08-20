@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { formatDateForDatabase } from './date-utils';
+import { validateReceivableData, validatePaymentData, checkRateLimit } from './validation';
 
 // Helper function to get the current user
 async function getCurrentUser() {
@@ -36,6 +37,12 @@ export const receivablesApi = {
   // Get all receivables
   getAll: async (customer?: string) => {
     await refreshTokenIfNeeded();
+    
+    // Rate limiting
+    const user = await getCurrentUser();
+    if (!checkRateLimit(`receivables_get_${user.id}`, 100, 60000)) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
     
     let query = supabase
       .from('receivables')
@@ -94,10 +101,13 @@ export const receivablesApi = {
   create: async (data: any) => {
     await refreshTokenIfNeeded();
     
+    // Validate and sanitize input data
+    const validatedData = validateReceivableData(data);
+    
     // Format the date properly before sending to database
     const formattedData = {
-      ...data,
-      date: formatDateForDatabase(data.date)
+      ...validatedData,
+      date: formatDateForDatabase(validatedData.date)
     };
     
     const { data: newReceivable, error } = await supabase
@@ -117,10 +127,13 @@ export const receivablesApi = {
   update: async (id: string, data: any) => {
     await refreshTokenIfNeeded();
     
+    // Validate and sanitize input data
+    const validatedData = validateReceivableData(data);
+    
     // Format the date properly before sending to database
     const formattedData = {
-      ...data,
-      date: data.date ? formatDateForDatabase(data.date) : data.date
+      ...validatedData,
+      date: validatedData.date ? formatDateForDatabase(validatedData.date) : validatedData.date
     };
     
     const { data: updatedReceivable, error } = await supabase
@@ -210,21 +223,13 @@ export const paymentsApi = {
   create: async (data: any) => {
     await refreshTokenIfNeeded();
     
-    // Validate required fields
-    const { receivable_id, payment_date, payment_amount, payment_type } = data;
-    if (!receivable_id || !payment_date || !payment_amount || !payment_type) {
-      throw new Error('Missing required fields: receivable_id, payment_date, payment_amount, payment_type');
-    }
-
-    // Validate payment_amount is a positive number
-    if (typeof payment_amount !== 'number' || payment_amount <= 0) {
-      throw new Error('Payment amount must be a positive number');
-    }
+    // Validate and sanitize input data
+    const validatedData = validatePaymentData(data);
 
     // Format the date properly before sending to database
     const formattedData = {
-      ...data,
-      payment_date: formatDateForDatabase(payment_date)
+      ...validatedData,
+      payment_date: formatDateForDatabase(validatedData.payment_date)
     };
 
     const { data: newPayment, error } = await supabase
@@ -244,10 +249,13 @@ export const paymentsApi = {
   update: async (id: string, data: any) => {
     await refreshTokenIfNeeded();
     
+    // Validate and sanitize input data
+    const validatedData = validatePaymentData(data);
+    
     // Format the date properly before sending to database
     const formattedData = {
-      ...data,
-      payment_date: data.payment_date ? formatDateForDatabase(data.payment_date) : data.payment_date
+      ...validatedData,
+      payment_date: validatedData.payment_date ? formatDateForDatabase(validatedData.payment_date) : validatedData.payment_date
     };
     
     const { data: updatedPayment, error } = await supabase
