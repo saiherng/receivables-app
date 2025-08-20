@@ -61,7 +61,7 @@ export default function Dashboard() {
             isLoading={isLoading}
           />
           <StatsCard
-            title="Total Payments"
+            title="Total Paid"
             value={`${totalPaid.toLocaleString()} MMK`}
             icon={CreditCard}
             gradient="linear(to-br, green.500, green.600)"
@@ -75,27 +75,27 @@ export default function Dashboard() {
             isLoading={isLoading}
           />
           <StatsCard
-            title="Active Customers"
+            title="Total Customers"
             value={uniqueCustomers.toString()}
             icon={Users}
             gradient="linear(to-br, purple.500, purple.600)"
             isLoading={isLoading}
           />
         </Grid>
-        
+
         <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
           <GridItem>
-            <RecentActivity
-              receivables={receivables.slice(0, 5)}
+            <RecentActivity 
+              receivables={receivables.slice(0, 5)} 
               payments={payments.slice(0, 5)}
               isLoading={isLoading}
             />
           </GridItem>
           <GridItem>
-            <CityBreakdown
-              receivables={receivables}
+            <CityBreakdown 
+              receivables={receivables} 
               payments={payments}
-              isLoading={isLoading}
+              isLoading={isLoading} 
             />
           </GridItem>
         </Grid>

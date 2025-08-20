@@ -196,7 +196,7 @@ export default function LoginPage() {
         >
           <VStack spacing={2}>
             <Heading size="lg">
-              {isSignUp ? 'Create Account' : 'Welcome Back'}
+              {isSignUp ? 'Create Account' : 'Receivables App'}
             </Heading>
             <Text fontSize="sm" opacity={0.9}>
               {isSignUp 
