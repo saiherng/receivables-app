@@ -139,7 +139,8 @@ export default function PaymentList({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.2 }}
-                        _hover={{ bg: "gray.50" }}
+                        style={{ cursor: 'pointer' }}
+                        whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.02)' }}
                       >
                         <Td>
                           {format(new Date(payment.payment_date), "MMM d, yyyy")}
