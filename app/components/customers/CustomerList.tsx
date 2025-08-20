@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import CustomerDetail from "./CustomerDetail";
+import { getCityBadgeProps } from "../../lib/city-utils";
 
 interface CustomerListProps {
   customers: any[];
@@ -51,6 +52,7 @@ export default function CustomerList({
       }
     }
   }, [customers, selectedCustomer]);
+
   if (isLoading) {
     return (
       <Card bg="white" border="1px solid" borderColor="orange.200" borderRadius="lg">
@@ -126,8 +128,7 @@ export default function CustomerList({
                         {customer.cities.slice(0, 3).map((city: string) => (
                           <Badge
                             key={city}
-                            variant="outline"
-                            fontSize="xs"
+                            {...getCityBadgeProps(city)}
                             fontWeight="normal"
                           >
                             {city}
@@ -135,8 +136,7 @@ export default function CustomerList({
                         ))}
                         {customer.cities.length > 3 && (
                           <Badge
-                            variant="outline"
-                            fontSize="xs"
+                            {...getCityBadgeProps(customer.cities[3])}
                             fontWeight="normal"
                           >
                             +{customer.cities.length - 3}
@@ -230,15 +230,12 @@ export default function CustomerList({
                   >
                     {customer.name}
                   </Td>
-                  <Td
-                    
-  
-                  >
+                  <Td>
                     <Flex flexWrap="wrap" gap={1} maxW="xs">
                       {customer.cities.map((city: string) => (
                         <Badge
                           key={city}
-                          variant="outline"
+                          {...getCityBadgeProps(city)}
                           fontWeight="normal"
                         >
                           {city}
@@ -299,42 +296,26 @@ export default function CustomerList({
     {/* Customer Detail Modal */}
     <AnimatePresence>
       {showDetail && selectedCustomer && (
-                 <CustomerDetail
-           customer={selectedCustomer}
-           onClose={() => {
-             setShowDetail(false);
-             setSelectedCustomer(null);
-           }}
-                       onEditPayment={(payment) => {
-              // Handle edit payment - could navigate to payments page
-            }}
-           onDeletePayment={async (paymentId) => {
-             // Handle delete payment
-             try {
-               const response = await fetch(`/api/payments/${paymentId}`, {
-                 method: 'DELETE',
-               });
-               
-               if (!response.ok) {
-                 const errorData = await response.json();
-                 throw new Error(errorData.error || 'Failed to delete payment');
-               }
-               
-               // Refresh the customer data when a payment is deleted
-               if (onRefresh) {
-                 onRefresh();
-               }
-             } catch (error: any) {
-               console.error('Error deleting payment:', error);
-             }
-           }}
-           onPaymentAdded={() => {
-             // Refresh the customer data when a payment is added
-             if (onRefresh) {
-               onRefresh();
-             }
-           }}
-         />
+        <CustomerDetail
+          customer={selectedCustomer}
+          onClose={() => {
+            setShowDetail(false);
+            setSelectedCustomer(null);
+          }}
+          onEditPayment={(payment) => {
+            // Handle edit payment - could navigate to payments page
+          }}
+          onDeletePayment={async (paymentId) => {
+            // This callback is no longer needed since CustomerDetail handles the API call
+            // But we keep it for backward compatibility
+          }}
+          onPaymentAdded={() => {
+            // Refresh the customer data when a payment is added, edited, or deleted
+            if (onRefresh) {
+              onRefresh();
+            }
+          }}
+        />
       )}
     </AnimatePresence>
     </>

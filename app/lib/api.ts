@@ -1,107 +1,333 @@
-// API service for client-side operations
-export class ApiService {
-  private baseUrl: string;
+import { supabase } from './supabase';
+import { formatDateForDatabase } from './date-utils';
 
-  constructor() {
-    this.baseUrl = '/api';
+// Helper function to get the current user
+async function getCurrentUser() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error('Authentication required. Please sign in again.');
+  }
+  return user;
+}
+
+// Helper function to refresh token if needed
+async function refreshTokenIfNeeded() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error || !session) {
+    throw new Error('Authentication required. Please sign in again.');
   }
 
-  // Generic request method
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
+  // Check if token is expired or will expire soon (within 5 minutes)
+  const expiresAt = session.expires_at;
+  const now = Math.floor(Date.now() / 1000);
+  const fiveMinutes = 5 * 60;
 
-    try {
-      const response = await fetch(url, config);
-      
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`API returned non-JSON response. Status: ${response.status}. Check server logs.`);
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error: any) {
-      throw error;
+  if (expiresAt && (expiresAt - now) < fiveMinutes) {
+    const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !newSession) {
+      throw new Error('Session expired. Please sign in again.');
     }
   }
+}
 
+// API functions for receivables
+export const receivablesApi = {
+  // Get all receivables
+  getAll: async (customer?: string) => {
+    await refreshTokenIfNeeded();
+    
+    let query = supabase
+      .from('receivables')
+      .select('*')
+      .order('date', { ascending: false });
+
+    // Add customer filter if provided
+    if (customer) {
+      query = query.eq('customer_name', customer);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      // If the error is about missing user_id column, try without it
+      if (error.message.includes('user_id') && error.message.includes('does not exist')) {
+        console.warn('user_id column not found, using RLS policies for filtering');
+        // RLS policies should handle the filtering automatically
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('receivables')
+          .select('*')
+          .order('date', { ascending: false });
+        
+        if (fallbackError) {
+          throw new Error(`Failed to fetch receivables: ${fallbackError.message}`);
+        }
+        return { data: fallbackData || [] };
+      }
+      throw new Error(`Failed to fetch receivables: ${error.message}`);
+    }
+
+    return { data: data || [] };
+  },
+
+  // Get receivable by ID
+  getById: async (id: string) => {
+    await refreshTokenIfNeeded();
+    
+    const { data, error } = await supabase
+      .from('receivables')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Receivable not found');
+      }
+      throw new Error(`Failed to fetch receivable: ${error.message}`);
+    }
+
+    return { data };
+  },
+
+  // Create new receivable
+  create: async (data: any) => {
+    await refreshTokenIfNeeded();
+    
+    // Format the date properly before sending to database
+    const formattedData = {
+      ...data,
+      date: formatDateForDatabase(data.date)
+    };
+    
+    const { data: newReceivable, error } = await supabase
+      .from('receivables')
+      .insert([formattedData])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create receivable: ${error.message}`);
+    }
+
+    return { data: newReceivable };
+  },
+
+  // Update receivable
+  update: async (id: string, data: any) => {
+    await refreshTokenIfNeeded();
+    
+    // Format the date properly before sending to database
+    const formattedData = {
+      ...data,
+      date: data.date ? formatDateForDatabase(data.date) : data.date
+    };
+    
+    const { data: updatedReceivable, error } = await supabase
+      .from('receivables')
+      .update(formattedData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update receivable: ${error.message}`);
+    }
+
+    return { data: updatedReceivable };
+  },
+
+  // Delete receivable
+  delete: async (id: string) => {
+    await refreshTokenIfNeeded();
+    
+    const { error } = await supabase
+      .from('receivables')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete receivable: ${error.message}`);
+    }
+
+    return { message: 'Receivable deleted successfully' };
+  },
+};
+
+// API functions for payments
+export const paymentsApi = {
+  // Get all payments
+  getAll: async () => {
+    await refreshTokenIfNeeded();
+    
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .order('payment_date', { ascending: false });
+
+    if (error) {
+      // If the error is about missing user_id column, try without it
+      if (error.message.includes('user_id') && error.message.includes('does not exist')) {
+        console.warn('user_id column not found, using RLS policies for filtering');
+        // RLS policies should handle the filtering automatically
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('payments')
+          .select('*')
+          .order('payment_date', { ascending: false });
+        
+        if (fallbackError) {
+          throw new Error(`Failed to fetch payments: ${fallbackError.message}`);
+        }
+        return { data: fallbackData || [] };
+      }
+      throw new Error(`Failed to fetch payments: ${error.message}`);
+    }
+
+    return { data: data || [] };
+  },
+
+  // Get payment by ID
+  getById: async (id: string) => {
+    await refreshTokenIfNeeded();
+    
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Payment not found');
+      }
+      throw new Error(`Failed to fetch payment: ${error.message}`);
+    }
+
+    return { data };
+  },
+
+  // Create new payment
+  create: async (data: any) => {
+    await refreshTokenIfNeeded();
+    
+    // Validate required fields
+    const { receivable_id, payment_date, payment_amount, payment_type } = data;
+    if (!receivable_id || !payment_date || !payment_amount || !payment_type) {
+      throw new Error('Missing required fields: receivable_id, payment_date, payment_amount, payment_type');
+    }
+
+    // Validate payment_amount is a positive number
+    if (typeof payment_amount !== 'number' || payment_amount <= 0) {
+      throw new Error('Payment amount must be a positive number');
+    }
+
+    // Format the date properly before sending to database
+    const formattedData = {
+      ...data,
+      payment_date: formatDateForDatabase(payment_date)
+    };
+
+    const { data: newPayment, error } = await supabase
+      .from('payments')
+      .insert([formattedData])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create payment: ${error.message}`);
+    }
+
+    return { data: newPayment };
+  },
+
+  // Update payment
+  update: async (id: string, data: any) => {
+    await refreshTokenIfNeeded();
+    
+    // Format the date properly before sending to database
+    const formattedData = {
+      ...data,
+      payment_date: data.payment_date ? formatDateForDatabase(data.payment_date) : data.payment_date
+    };
+    
+    const { data: updatedPayment, error } = await supabase
+      .from('payments')
+      .update(formattedData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update payment: ${error.message}`);
+    }
+
+    return { data: updatedPayment };
+  },
+
+  // Delete payment
+  delete: async (id: string) => {
+    await refreshTokenIfNeeded();
+    
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete payment: ${error.message}`);
+    }
+
+    return { message: 'Payment deleted successfully' };
+  },
+};
+
+// Backward compatibility: API service class
+export class ApiService {
   // Receivables API methods
   async getReceivables() {
-    return this.request<{ data: any[] }>('/receivables');
+    return receivablesApi.getAll();
   }
 
   async getReceivable(id: string) {
-    return this.request<{ data: any }>(`/receivables/${id}`);
+    return receivablesApi.getById(id);
   }
 
   async createReceivable(receivable: any) {
-    return this.request<{ data: any }>('/receivables', {
-      method: 'POST',
-      body: JSON.stringify(receivable),
-    });
+    return receivablesApi.create(receivable);
   }
 
   async updateReceivable(id: string, receivable: any) {
-    return this.request<{ data: any }>(`/receivables/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(receivable),
-    });
+    return receivablesApi.update(id, receivable);
   }
 
   async deleteReceivable(id: string) {
-    return this.request<{ message: string }>(`/receivables/${id}`, {
-      method: 'DELETE',
-    });
+    return receivablesApi.delete(id);
   }
 
   // Payments API methods
   async getPayments() {
-    return this.request<{ data: any[] }>('/payments');
+    return paymentsApi.getAll();
   }
 
   async getPayment(id: string) {
-    return this.request<{ data: any }>(`/payments/${id}`);
+    return paymentsApi.getById(id);
   }
 
   async createPayment(payment: any) {
-    return this.request<{ data: any }>('/payments', {
-      method: 'POST',
-      body: JSON.stringify(payment),
-    });
+    return paymentsApi.create(payment);
   }
 
   async updatePayment(id: string, payment: any) {
-    return this.request<{ data: any }>(`/payments/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payment),
-    });
+    return paymentsApi.update(id, payment);
   }
 
   async deletePayment(id: string) {
-    return this.request<{ message: string }>(`/payments/${id}`, {
-      method: 'DELETE',
-    });
+    return paymentsApi.delete(id);
   }
 
   // Optimized customer filtering methods
   async getReceivablesByCustomer(customerName: string) {
-    return this.request<{ data: any[] }>(`/receivables?customer=${encodeURIComponent(customerName)}`);
+    return receivablesApi.getAll(customerName);
   }
 
   async getCustomerSummaryOptimized(customerName: string) {
@@ -160,8 +386,8 @@ export class ApiService {
 
     return {
       name: customerName,
-      receivables: customerReceivables,
-      payments: customerPayments,
+      receivables,
+      payments,
       totalReceivables,
       totalPaid,
       outstandingBalance,

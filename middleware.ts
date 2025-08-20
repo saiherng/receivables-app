@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
-  // Simple middleware that just passes through
+  const { pathname } = req.nextUrl;
+
+  console.log('Middleware called for:', pathname);
+
+  // For now, let client-side components handle authentication
+  // This allows the ProtectedRoute component to work properly
   return NextResponse.next();
 }
 

@@ -14,12 +14,16 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
   const router = useRouter();
 
   useEffect(() => {
+    console.log('ProtectedRoute: loading =', loading, 'user =', user ? 'present' : 'null');
+    
     if (!loading && !user) {
+      console.log('ProtectedRoute: No user found, redirecting to login');
       router.push('/auth/login');
     }
   }, [user, loading, router]);
 
   if (loading) {
+    console.log('ProtectedRoute: Still loading, showing spinner');
     return (
       fallback || (
         <Box minH="100vh" display="flex" alignItems="center" justifyContent="center">
@@ -37,8 +41,10 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
   }
 
   if (!user) {
+    console.log('ProtectedRoute: No user, returning null (will redirect)');
     return null; // Will redirect to login
   }
 
+  console.log('ProtectedRoute: User authenticated, rendering children');
   return <>{children}</>;
 }

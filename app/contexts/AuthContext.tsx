@@ -19,12 +19,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Initializing authentication');
+    
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        console.log('AuthProvider: Getting initial session');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('AuthProvider: Error getting session:', error);
+        } else {
+          console.log('AuthProvider: Initial session:', session ? 'present' : 'null');
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('AuthProvider: Exception getting session:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getInitialSession();
@@ -32,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('AuthProvider: Auth state change:', event, session ? 'session present' : 'no session');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -43,9 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      console.log('AuthProvider: Signing out');
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
+      } else {
+        console.log('AuthProvider: Sign out successful');
       }
     } catch (error) {
       console.error('Sign out exception:', error);
@@ -54,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      console.log('AuthProvider: Refreshing user');
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('AuthProvider: Refreshed user:', user ? 'present' : 'null');
       setUser(user);
     } catch (error) {
       console.error('Refresh user error:', error);
@@ -68,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     refreshUser,
   };
+
+  console.log('AuthProvider: Current state - loading:', loading, 'user:', user ? 'present' : 'null');
 
   return (
     <AuthContext.Provider value={value}>

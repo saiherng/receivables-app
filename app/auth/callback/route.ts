@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -8,6 +11,14 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
+      // Create a server-side client for this specific operation
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       
       if (error) {
@@ -16,7 +27,6 @@ export async function GET(request: NextRequest) {
       }
 
       if (data.user) {
-        
         return NextResponse.redirect(`${origin}${next}`);
       }
     } catch (error: any) {
